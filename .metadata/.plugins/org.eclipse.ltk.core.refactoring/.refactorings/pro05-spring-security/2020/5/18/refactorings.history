@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Move element &apos;include&apos; to &apos;atcrowdfunding03-admin-component/src/main/java/org.springframework&apos;&#x0A;- Original project: &apos;pro05-spring-security&apos;&#x0A;- Destination element: &apos;atcrowdfunding03-admin-component/src/main/java/org.springframework&apos;&#x0A;- Original element: &apos;include&apos;&#x0A;- Update references to refactored element" description="Move folder" destination="=atcrowdfunding03-admin-component/src\/main\/java=/optional=/true=/=/maven.pomderived=/true=/&lt;org.springframework" element1="src/main/webapp/WEB-INF/include" files="0" flags="589830" folders="1" id="org.eclipse.jdt.ui.move" policy="org.eclipse.jdt.ui.moveResources" qualified="false" references="true" stamp="1588319410831" units="0" version="1.0"/>
+</session>

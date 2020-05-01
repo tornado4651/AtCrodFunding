@@ -1,0 +1,186 @@
+package com.atguigu.crowd.service.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Service;
+
+import com.atguigu.crowd.constant.CrowdConstant;
+import com.atguigu.crowd.entity.Admin;
+import com.atguigu.crowd.entity.AdminExample;
+import com.atguigu.crowd.entity.AdminExample.Criteria;
+import com.atguigu.crowd.exception.LoginAcctAlreadyInUseException;
+import com.atguigu.crowd.exception.LoginAcctAlreadyInUseForUpdateException;
+import com.atguigu.crowd.exception.LoginFailedException;
+import com.atguigu.crowd.mapper.AdminMapper;
+import com.atguigu.crowd.service.api.AdminService;
+import com.atguigu.crowd.util.CrowdUtil;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+
+@Service
+public class AdminServiceImpl implements AdminService{
+
+	@Autowired
+	AdminMapper adminMapper;
+	
+	private Logger logger = LoggerFactory.getLogger(AdminServiceImpl.class);
+	
+	/**
+	 * 保存新增用户
+	 */
+	@Override
+	public void saveAdmin(Admin admin) {
+		
+		// 1.密码加密
+		String userPswd = admin.getUserPswd();
+		userPswd = CrowdUtil.md5(userPswd);
+		admin.setUserPswd(userPswd);
+		
+		// 2.生成创建时间
+		Date date = new Date();
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String createTime = format.format(date);
+		admin.setCreateTime(createTime);
+
+		// 3.执行保存
+		try {
+			adminMapper.insert(admin);
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.info("异常全类名： " + e.getClass().getName());
+			if(e instanceof DuplicateKeyException) {
+				throw new LoginAcctAlreadyInUseException(CrowdConstant.MESSAGE_LOGIN_ACCT_ALREADY_IN_USE);
+			}
+		}
+	}
+
+	
+	/**
+	 * 获取所有用户
+	 */
+	@Override
+	public List<Admin> getAll() {
+		List<Admin> adminList =  adminMapper.selectByExample(new AdminExample());
+		return adminList;
+	}
+	
+	
+	/**
+	 * 根据用户名获取用户，用于登陆操作，其中包含了检验功能
+	 */
+	@Override
+	public Admin getAdminByLoginAcct(String loginAcct, String userPswd) {
+		
+		// 1.根据登陆账号查询Admin对象
+		AdminExample adminExample = new AdminExample();
+		Criteria criteria = adminExample.createCriteria();
+		criteria.andLoginAcctEqualTo(loginAcct);
+		List<Admin> adminList = adminMapper.selectByExample(adminExample);
+		
+		// 2.判断Admin对象是否为null
+		// 3.如果Admin对象为null则抛出异常
+		if(adminList == null || adminList.size()==0) {
+			throw new LoginFailedException(CrowdConstant.MESSAGE_LOGIN_FAILED);
+		}
+		if(adminList.size() > 1) {
+			throw new LoginFailedException(CrowdConstant.MESSAGE_SYSTEM_ERROR_LOGIN_NOT_UNIQUE);
+		}
+		Admin admin = adminList.get(0);
+		if(admin == null) {
+			throw new LoginFailedException(CrowdConstant.MESSAGE_LOGIN_FAILED);
+		}
+		
+		// 4.如果Admin对象不为空，则从该对象中取出密码
+		String userPswdDB = admin.getUserPswd();
+		
+		// 5.将表单的密码明文md5加密
+		String userPswdForm = CrowdUtil.md5(userPswd);
+ 		
+		// 6.对密码进行比较
+		if(!Objects.equals(userPswdDB, userPswdForm)) {
+			// 7.如果不一样，抛出异常
+			throw new LoginFailedException(CrowdConstant.MESSAGE_LOGIN_FAILED); 
+		}
+		// 8.如果一样，返回Admin对象
+		return admin;
+	}
+
+	
+	/**
+	 * 获取所有用户列表，用于“用户管理页面”
+	 */
+	@Override
+	public PageInfo<Admin> getPageInfo(String keyword, Integer pageNum, Integer pageSize) {
+		
+		// 1.调用PageHelper的静态方法开启分页功能
+		PageHelper.startPage(pageNum, pageSize);
+		
+		// 2.执行查询,开启分页功能后，返回的类型实际是List类型，但由于多态，Page继承了ArrayList，所以可以指定为List类型。
+		List<Admin> adminList = adminMapper.selectAdminByKeyWord(keyword);
+		
+		// 3.将查询结果封装到PageInfo中
+		return new PageInfo<>(adminList);
+	}
+
+	
+	/**
+	 * 根据主键值删除单用户
+	 */
+	@Override
+	public void remove(Integer adminId) {
+		adminMapper.deleteByPrimaryKey(adminId);
+	}
+
+
+	/**
+	 * 根据adminId返回admin数据
+	 */
+	@Override
+	public Admin getAdminById(Integer adminId) {
+		
+		Admin admin = adminMapper.selectByPrimaryKey(adminId);
+		
+		return admin;
+	}
+
+
+	/**
+	 * 更新用户信息
+	 */
+	@Override
+	public void update(Admin admin) {
+		//selective表示有选择的更新，有null值的不更新
+		//使用try catch防止更新后用户名相同抛出异常
+		try {
+			System.out.println(admin);
+			adminMapper.updateByPrimaryKeySelective(admin);
+			
+		} catch (Exception e) {
+			
+			e.printStackTrace();
+			logger.info("异常全类名： " + e.getClass().getName());
+			
+			if(e instanceof DuplicateKeyException) {
+				throw new LoginAcctAlreadyInUseForUpdateException(CrowdConstant.MESSAGE_LOGIN_ACCT_ALREADY_IN_USE);
+			}
+		}
+	}
+
+
+	/**
+	 * 保存用户的角色，包含更新功能
+	 */
+	@Override
+	public void saveAdminRoleRelationship(Integer adminId, List<Integer> roleIdList) {
+		//为了简化操作，把当前该用户所有角色都删除，然后根据roleIdList插入新值
+		adminMapper.deleteRelationship(adminId);
+	}
+
+}

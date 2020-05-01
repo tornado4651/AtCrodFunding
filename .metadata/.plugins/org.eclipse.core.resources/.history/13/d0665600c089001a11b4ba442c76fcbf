@@ -1,0 +1,21 @@
+package com.atguigu.security.config;
+
+import java.security.MessageDigest;
+
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+public class MyPasswordEncoder implements PasswordEncoder{
+
+	public String encode(CharSequence rawPassword) {
+		String algorithm = "MD5";
+		MessageDigest.getInstance(algorithm )
+		return null;
+	}
+
+	public boolean matches(CharSequence rawPassword, String encodedPassword) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+}

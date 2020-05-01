@@ -1,0 +1,7 @@
+package com.atguigu.spring;
+
+
+@Configuration
+public class MyAnnotationConfiguration {
+
+}

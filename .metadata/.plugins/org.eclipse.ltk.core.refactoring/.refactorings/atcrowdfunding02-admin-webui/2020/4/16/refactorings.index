@@ -1,0 +1,6 @@
+1586670567440	Move 'mapper' to 'mybatis'
+1586670571759	Move 'AdminMapper.xml' to 'mapper'
+1586676402933	Copy file
+1586676409993	Delete element
+1586775186330	Rename resource 'spring-mvc-config.xml'
+1586778435403	Move 'index.jsp' to 'webapp'

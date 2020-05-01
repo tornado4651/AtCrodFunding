@@ -1,0 +1,13 @@
+package com.atguigu.spring.test;
+
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import com.atguigu.spring.MyAnnotationConfiguration;
+
+public class SpringTest {
+	public static void main(String[] args) {
+//		new ClassPathXmlApplicationContext();
+		new AnnotationConfigApplicationContext(MyAnnotationConfiguration.class);
+	}
+}

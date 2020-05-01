@@ -1,0 +1,11 @@
+0:0:0:0:0:0:0:1 - - [01/May/2020:01:33:20 +0800] "GET /atcrowdfunding02-admin-webui/index.jsp HTTP/1.1" 200 3592
+0:0:0:0:0:0:0:1 - - [01/May/2020:01:33:25 +0800] "GET /atcrowdfunding02-admin-webui/admin/to/login/page.html HTTP/1.1" 500 8635
+0:0:0:0:0:0:0:1 - - [01/May/2020:01:33:44 +0800] "GET /atcrowdfunding02-admin-webui/index.jsp HTTP/1.1" 200 3592
+0:0:0:0:0:0:0:1 - - [01/May/2020:01:34:19 +0800] "GET /atcrowdfunding02-admin-webui/bootstrap/css/bootstrap.css HTTP/1.1" 200 146010
+127.0.0.1 - - [01/May/2020:15:56:31 +0800] "GET / HTTP/1.1" 404 675
+0:0:0:0:0:0:0:1 - - [01/May/2020:15:56:47 +0800] "GET /atcrowdfunding02-admin-webui/ HTTP/1.1" 200 3592
+0:0:0:0:0:0:0:1 - - [01/May/2020:15:56:51 +0800] "GET /atcrowdfunding02-admin-webui/admin/to/login/page.html HTTP/1.1" 500 8635
+127.0.0.1 - - [01/May/2020:16:12:23 +0800] "GET / HTTP/1.1" 404 675
+0:0:0:0:0:0:0:1 - - [01/May/2020:16:12:24 +0800] "GET /atcrowdfunding02-admin-webui/admin/to/login/page.html HTTP/1.1" 200 1993
+0:0:0:0:0:0:0:1 - - [01/May/2020:16:12:27 +0800] "POST /atcrowdfunding02-admin-webui/admin/do/login.html HTTP/1.1" 302 -
+0:0:0:0:0:0:0:1 - - [01/May/2020:16:12:27 +0800] "GET /atcrowdfunding02-admin-webui/admin/to/main/page.html HTTP/1.1" 200 7060

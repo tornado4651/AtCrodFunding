@@ -1,0 +1,7 @@
+package com.atguigu.crowd.service.impl;
+
+import com.atguigu.crowd.service.api.AuthService;
+
+public class AuthServiceImpl implements AuthService{
+
+}

@@ -1,0 +1,19 @@
+package com.atguigu.security.config;
+
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
+public class MyUserDetailsService implements UserDetailsService {
+
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+
+		// 1.使用 SQL 语句根据用户名查询用户对象
+		String sql = "SELECT id,loginacct,userpswd,username,email,createtime FROM t_admin WHERE loginacct= ?"; 
+		//2.获取查询结果
+		Map<String, Object> resultMap = jdbcTemplate.queryForMap(sql,  username);
+
+		return null;
+	}
+
+}

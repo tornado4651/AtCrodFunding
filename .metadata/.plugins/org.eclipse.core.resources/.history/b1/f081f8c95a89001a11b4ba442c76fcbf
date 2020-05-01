@@ -1,0 +1,6 @@
+package com.atguigu.security.entity;
+
+public class Admin {
+	private Integer id;
+	private String loginacct;
+} 

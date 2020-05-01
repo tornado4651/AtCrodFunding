@@ -1,0 +1,70 @@
+package com.atguigu.crowd.mvc.handler;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import com.atguigu.crowd.entity.Role;
+import com.atguigu.crowd.service.api.AdminService;
+import com.atguigu.crowd.service.api.AuthService;
+import com.atguigu.crowd.service.api.RoleService;
+
+@Controller
+public class AssignHandler {
+
+	@Autowired
+	private AdminService adminService;
+	
+	@Autowired
+	private RoleService roleService;
+	
+	@Autowired
+	private AuthService authService;
+	
+	
+	/**
+	 * 转到角色编辑页面功能，需要查询好当前编辑的用户所分配的角色和所有角色，带数据转
+	 * @param adminId
+	 * @param modelMap
+	 * @return
+	 */
+	@RequestMapping("/assign/to/assign/role/page.html")
+	public String toAssignRolePage(@RequestParam("adminId") Integer adminId, ModelMap modelMap) {
+		// 1.查询当前用户已分配的角色
+		List<Role> assignedRoleList = roleService.getAssignedRole(adminId);
+		// 2.查询未分配角色
+		List<Role> unAssignedRoleList = roleService.getUnAssignedRole(adminId);
+		// 3.存入模型返回给前端，本质上是request.setAttribute("xxx", xxx);
+		modelMap.addAttribute("assignedRoleList", assignedRoleList);
+		modelMap.addAttribute("unAssignedRoleList", unAssignedRoleList);
+		return "assign-role";
+	}
+	
+	
+	/**
+	 * 给用户注册角色
+	 * @return
+	 */
+	@RequestMapping("/assign/do/role/assign.html")
+	public String saveAdminRoleRelationship(
+			@RequestParam("adminId") Integer adminId,
+			@RequestParam("pageNum") Integer pageNum,
+			@RequestParam("keyword") String keyword,
+			// 允许不提供roleIdList,设置required=false
+			@RequestParam(value="roleIdList",required=false) List<Integer> roleIdList) {
+		
+		adminService.saveAdminRoleRelationship(adminId, roleIdList);
+		
+		return "redirect:/admin/get/page.html?pageNum="+pageNum+"&keyword="+keyword;
+	}
+	
+	
+	/**
+	 * 处理请求所有auth的功能
+	 */
+	@RequestMapping("/assgin/get/all/auth.json")
+}

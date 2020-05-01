@@ -1,0 +1,319 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+
+<!DOCTYPE html>
+<html lang="UTF-8">
+<!-- 提取出navigator部分，单独包含进来 -->
+<%@include file="/WEB-INF/include-head.jsp"%>
+<title>角色管理</title>
+
+<!-- 引入pagination的两个文件，jQuery已经引入在head中了，不需要再引入了 -->
+<!-- 注意顺序！一定要在jQuery的后面 -->
+<link rel="stylesheet" href="css/pagination.css" />
+<script type="text/javascript" src="jquery/jquery.pagination.js"></script>
+<script type="text/javascript" src="crowd/my-role.js"></script>
+<script type="text/javascript">
+	// 该页面使用Ajax请求准备初始化数据
+	$(function(){
+		// 1.为分页操作准备初始化数据
+		window.pageNum = 1;
+		window.pageSize = 5;
+		window.keyword = "";
+		
+		
+		// 2.调用包含进来的‘crowd/my-role.js’中的函数生成页面
+		generatePage();
+		
+		
+		// 3.给查询按钮绑定函数,实现查询功能
+		$("#searchBtn").click(function(){
+			// 先将搜索关键字赋值给全局变量
+			window.keyword = $("#keywordInput").val();
+			// 然后再次调用生成page函数，生成页面
+			generatePage();
+			
+		});
+		
+		
+		// 4.点击“新增”按钮打开模态框
+		$("#showAddModalBtn").click(function(){
+			$("#addModal").modal('show');
+		});
+		
+		
+		// 5.给新增模态框的保存按钮绑定响应函数
+		$("#saveRoleBtn").click(function(){
+			// 获取新建的roleName
+			// $.trim(）函数表示取出前后空格
+			var roleName = $.trim($("#addModal [name=roleName]").val());
+			
+			//发送Ajax请求
+			$.ajax({
+				"url": "role/save.json",
+				"type": "post",
+				"data": {
+					"name": roleName
+				},
+				"dataType": "json",
+				"success": function(response){
+					var result = response.result;
+					if(result == "SUCCESS"){
+						layer.msg("操作成功！已保存");
+						// 重新加载分页,并定位到最后一位
+						window.pageNum = 9999999;
+						generatePage();
+					}
+					if(result == "FAILED"){
+						layer.msg("操作失败！"+response.message);
+					}
+				},
+				"error": function(response){
+					layer.msg(response.status+" "+response.statusText);
+				}
+			});
+			// 关闭模态框
+			$("#addModal").modal('hide');
+			// 清理模态框
+			$("#addModal [name=roleName]").val("");
+		  });
+	
+			
+		// 6.给页面上的“更新”按钮绑定单击响应函数，目的是打开模态框
+		// 传统的事件绑定方式只能在第一个页面有效，翻页后失效了
+		// $(".editBtn").click(function(){
+		// 	alert("aaaa...");
+		// });
+		
+		// 使用jQuery对象的on()函数可以解决上面问题
+		// ①首先找到所有“动态生成”的元素所附着的“静态”元素
+		// ②on()函数的第一个参数是事件类型
+		// ③on()函数的第二个参数是找到真正要绑定事件的元素的选择器
+		// ③on()函数的第三个参数是事件的响应函数
+		$("#rolePageBody").on("click",".editBtn",function(){
+			$("#editModal").modal('show');
+			//获取主要数据
+			var roleName = $(this).parent().prev().text();
+			window.roleId = this.id;
+			//回显到模态框中
+			$("#editModal [name=roleName]").val(roleName);
+		});
+		
+		
+		// 7.给“更新模态框”中的更新按钮绑定单击响应函数
+		$("#updateRoleBtn").click(function(){
+			// 从文本框中取出新的roleName
+			var roleName = $("#editModal [name=roleName]").val();
+			//发送ajax请求执行更新
+			$.ajax({
+				"url": "role/update.json",
+				"type": "post",
+				"data": {
+					"id": window.roleId,
+					"name": roleName
+				},
+				"dataType": "json",
+				"success": function(response){
+					var result = response.result;
+					if(result == "SUCCESS"){
+						layer.msg("操作成功！已保存");
+						// 重新加载分页,并定位到最后一位
+						generatePage();
+					}
+					if(result == "FAILED"){
+						layer.msg("操作失败！"+response.message);
+					}
+				},
+				"error": function(response){
+					layer.msg(response.status+" "+response.statusText);
+				}
+			});
+			// 关闭模态框
+			$("#editModal").modal('hide');
+		});
+		
+		
+		
+		// 8.给“确认删除模态框“中的”确认删除“按钮，绑定执行删除的ajax请求
+		$("#removeRoleBtn").click(function(){
+			// 先将全局变量window.roleIdArray转化成json格式
+			// window.roleIdArray中的值已经在showConfirmModal()函数中传好了。
+			var roleIdArrayJson = JSON.stringify(window.roleIdArray);
+			
+			$.ajax({
+				"url": "role/remove/by/role/id/array.json",
+				"type": "post",
+				"data": roleIdArrayJson,
+				"contentType": "application/json; charset=UTF-8",
+				"dataType": "json",
+				"success": function(response){
+					var result = response.result;
+					if(result == "SUCCESS"){
+						layer.msg("操作成功！已删除！");
+						// 重新加载分页,并定位到最后一位
+						generatePage();
+					}
+					if(result == "FAILED"){
+						layer.msg("操作失败！"+response.message);
+					}
+				},
+				"error": function(response){
+					layer.msg(response.status+" "+response.statusText);
+				}
+		 	});//ajax over
+		 	
+			// 关闭模态框
+			$("#confirmModal").modal('hide');
+		
+		});
+		
+		
+		// 9.给单条删除按钮绑定单击事件,和修改类似
+		$("#rolePageBody").on("click", ".removeBtn", function(){
+			//准备好roleArray
+			var roleArray = [{
+				roleId: this.id,
+				roleName: $(this).parent().prev().text()
+			}];
+			//打开模态框
+			showConfirmModal(roleArray);
+		});
+		
+		
+		// 10.给总的checkBox绑定单击响应函数
+		$("#summaryBox").click(function(){
+			// 获取当前多选框的自身状态
+			var currentStatus = this.checked;
+			// 用当前状态设置其他多选框状态
+			$(".itemBox").prop("checked", currentStatus);
+		});
+		
+		
+		// 11.全选、全不选的反向操作
+		$("#rolePageBody").on("click",".itemBox",function(){
+			// 获取当前已经选中的itemBox数量
+			var checkedBoxCount = $(".itemBox:checked").length;
+			
+			// 获取全部itemBox的数量
+			var totalBoxCount = $(".itemBox").length;
+			
+			//使用二者的比较结果设置总checkBox的属性
+			$("#summaryBox").prop("checked", checkedBoxCount == totalBoxCount);
+		});
+		
+		
+		// 12.给批量删除按钮绑定单击响应函数
+		$("#batchRemoveBtn").click(function(){
+			// 创建一个数组对象，用来存放后面获取到的角色对象
+			var roleArray = [];
+			// 遍历当前选中的文本框
+			$(".itemBox:checked").each(function(){
+				//使用this引用当前遍历得到的多选框
+				var roleId = this.id;
+				var roleName = $(this).parent().next().text();
+				
+				roleArray.push({
+					"roleId": roleId,
+					"roleName": roleName
+				});
+			});
+			// 判断选择的为空
+			if(roleArray.length == 0){
+				layer.msg("请至少选择一个执行删除");
+				return;
+			}
+			// 如果角色数组有效，弹出确认提示框
+			showConfirmModal(roleArray);
+		});
+		
+		
+		// 13.给编辑auth按钮绑定“显示模态框”的单击事件
+		$("#rolePageBody").on("click",".checkBtn",function(){
+			
+			
+			//打开模态框
+			$("#assignModal").modal('show');
+		});
+		
+	});
+</script>
+
+
+<body>
+
+	<!-- 提取出navigator部分，单独包含进来 -->
+	<%@include file="/WEB-INF/include-navigator.jsp"%>
+
+	<div class="container-fluid">
+		<div class="row">
+
+			<!-- 提取出sidebar部分，单独包含进来 -->
+			<%@include file="/WEB-INF/include-sidebar.jsp"%>
+			
+			<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3 class="panel-title">
+							<i class="glyphicon glyphicon-th"></i> 数据列表
+						</h3>
+					</div>
+					<div class="panel-body">
+						<form class="form-inline" role="form" style="float: left;">
+							<div class="form-group has-feedback">
+								<div class="input-group">
+									<div class="input-group-addon">查询条件</div>
+									<input  id="keywordInput" class="form-control has-success" type="text"
+										placeholder="请输入查询条件">
+								</div>
+							</div>
+							<button id="searchBtn" type="button" class="btn btn-warning">
+								<i class="glyphicon glyphicon-search"></i> 查询
+							</button>
+						</form>
+						<button id="batchRemoveBtn" type="button" class="btn btn-danger"
+							style="float: right; margin-left: 10px;">
+							<i class=" glyphicon glyphicon-remove"></i> 删除
+						</button>
+						<button id="showAddModalBtn" type="button" class="btn btn-primary"
+							style="float: right;">
+							<i class="glyphicon glyphicon-plus"></i> 新增
+						</button>
+						<br>
+						<hr style="clear: both;">
+						<div class="table-responsive">
+							<table class="table  table-bordered">
+								<thead>
+									<tr>
+										<th width="30">#</th>
+										<th width="30"><input id="summaryBox" type="checkbox"></th>
+										<th>名称</th>
+										<th width="100">操作</th>
+									</tr>
+								</thead>
+								<tbody id="rolePageBody">
+									<!-- 这里使用JS代码请求填充 -->
+								</tbody>
+								<tfoot>
+									<tr>
+										<td colspan="6" align="center">
+											<div id="Pagination" class="pagination">
+												<!-- 这里显示分页 -->
+											</div>
+										</td>
+									</tr>
+								</tfoot>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</div>
+	
+	<!-- 加入模态框 -->
+	<%@include file="/WEB-INF/modal-role-add.jsp" %>
+	<%@include file="/WEB-INF/modal-role-edit.jsp" %>
+	<%@include file="/WEB-INF/modal-role-confirm.jsp" %>
+	<%@include file="/WEB-INF/modal-role-assign-auth.jsp" %>
+</body>
+</html>

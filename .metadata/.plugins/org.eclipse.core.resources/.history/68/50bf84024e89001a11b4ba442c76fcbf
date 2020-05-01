@@ -1,0 +1,64 @@
+package com.atguigu.security.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+@Configuration
+@EnableWebSecurity // 启用web环境下的权限控制功能
+public class WebAppSecurityConfig extends WebSecurityConfigurerAdapter {
+	/**
+	 * 配置用户角色和权限
+	 */
+	@Override protected void configure(AuthenticationManagerBuilder builder) throws Exception { 
+		builder
+			.inMemoryAuthentication() 
+			.withUser("tom")
+			.password("123123") //设置账号密码
+			.roles("ADMIN") //设置角色
+			.and() 
+			.withUser("jerry")
+			.password("456456")//设置另一个账号密码
+			.authorities("SAVE","EDIT"); //设置权限}
+	}
+	
+	/**
+	 * 配置请求路径
+	 */
+	@Override protected void configure(HttpSecurity security) throws Exception {
+		security.authorizeRequests()	//对请求进行授权
+				// 使用 ANT 风格设置要授权的 URL 地址,允许上面使用 ANT 风格设置的全部请求
+				.antMatchers("/layui/**","/index.jsp")	
+				.permitAll()	
+				// 设置特定角色可以访问的资源
+				.antMatchers("/level1/**")
+				.hasRole("学徒")
+				.antMatchers("/level2/**") 
+				.hasAuthority("内门弟子")；
+				.antMatchers("/level3/**") 
+				.hasRole("宗师")
+				// 其他未设置的全部请求,需要认证
+				.anyRequest()	
+				.authenticated()	
+				// 设置未授权请求跳转到登录页面
+				.and() 
+				.formLogin()	
+				// 开启登录功能基础设置
+				.loginPage("/index.jsp")	
+				.loginProcessingUrl("/do/login.html") // 指定提交登录表单的地址
+				.usernameParameter("loginAcct") // 定制登录账号的请求参数名
+				.passwordParameter("userPswd") // 定制登录密码的请求参数名
+				.defaultSuccessUrl("/main.html") //设置登录成功后默认前往的 URL 地址
+				.and()
+				// 将csrf功能关闭
+//				.csrf()
+//				.disable()
+				// 开启退出功能
+				.logout()							
+				.logoutUrl("/do/logout.html")
+				.logoutSuccessUrl("/index.jsp")
+				;
+	}
+}

@@ -1,0 +1,16 @@
+package com.atguigu.crowd.service.api;
+
+import java.util.List;
+
+import com.atguigu.crowd.entity.Auth;
+import com.sun.xml.internal.xsom.impl.scd.Iterators.Map;
+
+public interface AuthService {
+
+	List<Auth> getAll();
+
+	List<Integer> getAssignedAuthIdByRoleId(Integer roleId);
+
+	void saveRoleAuthRelathinship(Map<String, List<Integer>> map);
+
+}

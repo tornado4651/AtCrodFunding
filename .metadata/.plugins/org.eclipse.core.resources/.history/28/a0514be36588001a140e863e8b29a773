@@ -1,0 +1,25 @@
+package com.atguigu.crowd.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.atguigu.crowd.entity.Auth;
+import com.atguigu.crowd.mapper.AuthMapper;
+import com.atguigu.crowd.service.api.AuthService;
+
+
+@Service
+public class AuthServiceImpl implements AuthService{
+
+	@Autowired
+	private AuthMapper authMapper;
+
+	@Override
+	public List<Auth> getAll() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+}

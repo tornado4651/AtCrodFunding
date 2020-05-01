@@ -1,0 +1,201 @@
+/**
+ * 用于角色管理的Ajax请求的封装js函数
+ */
+
+/**
+ * 生成角色管理页面功能的函数
+ * 执行分页，生成页面效果
+ * 任何时候调用这个函数都会重新加载页面
+ * @returns
+ */
+function generatePage(){
+	// 1.获取分页数据
+	var pageInfo = getPageInfoRemote();
+	
+	// 2.填充表格
+	fillTableBody(pageInfo);
+}
+
+
+/**
+ * 远程请求服务器端pageInfo的函数
+ * @returns
+ */
+function getPageInfoRemote(){
+	var ajaxResult = $.ajax({
+		"url": "role/get/page/info.json",
+		"type": "post",
+		"data": {
+			"pageNum": window.pageNum,
+			"pageSize": window.pageSize,
+			"keyword": window.keyword,
+		},
+		"async": false,
+		"dataType": "json",
+	});
+	// 判断相应状态码，不是200，说明发生错误，显示提示消息
+	var statusCode = ajaxResult.status;
+	if(statusCode != 200){
+		layer.msg("失败！相应状态码="+statusCode+" 说明信息="+ajaxResult.statusText);
+		return null;
+	}
+	// 如果是200，说明返回成功，获取pageInfo
+	var resultEntity = ajaxResult.responseJSON;
+	var result = resultEntity.result;
+	if(result == "FAILD"){
+		layer.msg("服务器处理失败！"+resultEntity.message);
+		return null;
+	}
+	//如果请求和服务器都成功了，则一定返回pageInfo
+	var pageInfo = resultEntity.data;
+	return pageInfo;
+}
+
+
+/**
+ * 填充表格主体功能的函数
+ * @param pageInfo
+ * @returns
+ */
+function fillTableBody(pageInfo){
+	// 为了分页操作时不一直追加数据，导致页面变长，所以追加前先清空标签中的内容
+	$("#rolePageBody").empty();
+	// 为了在没有查询到数据时，不显示导航条更合理。
+	// 所以每次填充前要清空导航条，如果pageInfo不可用，直接返回，不会再生成分页导航条
+	$("#Pagination").empty();
+	// 1.判断pageInfo是否有效
+	if(pageInfo==null || pageInfo==undefined || pageInfo.list==null ||pageInfo.list.length==0){
+		$("#rolePageBody").append("<tr><td colspan='4' align='center'>抱歉！没有查询到您搜索的数据！</td></tr>");
+		return ;
+	}
+	// 2.pageInfo没有问题了，使用其list属性填充<tbody>
+	for(var i=0; i<pageInfo.list.length; i++){
+		// 获取具体的角色数据
+		var role = pageInfo.list[i];
+		var roleId = role.id;
+		var roleName = role.name;
+		// 生成表格内容的标签变量
+		var numberTd = "<td>"+(i+1)+"</td>";
+		var checkBoxTd = "<td><input id='" + roleId + "' class='itemBox' type='checkbox'></td>";
+		var nameTd = "<td>"+ roleName +"</td>";
+		// 生成按钮的标签变量
+		var checkBtn = "<button id='" + roleId + "' type='button' class='btn btn-success btn-xs checkBtn'><i class=' glyphicon glyphicon-check'></i></button>";
+		var editBtn = "<button id='" + roleId + "'  type='button' class='btn btn-primary btn-xs editBtn'><i class=' glyphicon glyphicon-pencil'></i></button>";
+		var removeBtn = "<button id='" + roleId + "' type='button' class='btn btn-danger btn-xs removeBtn'><i class=' glyphicon glyphicon-remove'></i></button>";
+		// 合并三个标签
+		var btnTd = "<td>" + checkBtn + " " + editBtn + " " + removeBtn + "</td>";
+		// 组装所有标签
+		var trs = "<tr>" + numberTd + checkBoxTd + nameTd + btnTd + "</tr>";
+		// 追加到<tbody>中
+		$("#rolePageBody").append(trs);
+	}
+		// 生成分页导航条
+		generateNavigator(pageInfo);
+		
+}
+
+
+/**
+ * 生成分页导航栏功能的函数
+ * @param pageInfo
+ * @returns
+ */
+function generateNavigator(pageInfo){
+	// 获取总记录数
+	var totalRecord = pageInfo.total;
+	// 声明一个JSON对象存储Pagination要设置的属性
+	var properties = {
+		num_edge_entries: 3,				// 边缘页数
+		num_display_entries: 4,				// 主体页数
+		callback: paginationCallback,		// 指定用户点击“翻页”的按钮时跳转页面的回调函数
+		items_per_page: pageInfo.pageSize,	// 每页要显示的数据的数量
+		current_page: pageInfo.pageNum-1,	// Pagination内部使用pageIndex来管理页码，pageIndex从0开始，pageNum从1开始，所以要减一
+		prev_text: "上一页",					// 上一页按钮上显示的文本
+		next_text: "下一页"					// 下一页按钮上显示的文本
+	};
+	// 生成页码导航条
+	$("#Pagination").pagination(totalRecord, properties);
+}
+
+
+/**
+ * 翻页时，pagination插件的回调函数
+ * @param pageIndex
+ * @param JQuery
+ * @returns
+ */
+function paginationCallback(pageIndex, JQuery){
+	// 先修改全局变量window的pageNum属性
+	window.pageNum = pageIndex+1;
+	// 调用分页函数
+	generatePage();
+	// 取消页码超链接的默认行为
+	return false;
+}
+
+
+/**
+ * 根据传入的角色数组弹出“确认删除”提示框功能
+ * @param roleArray
+ * @returns
+ */
+function showConfirmModal(roleArray){
+	// 打开模态框
+	$("#confirmModal").modal('show');
+	
+	// 清除上次的旧数据
+	$("#roleNameSpan").empty();
+	
+	// 先创建一个全局变量存放roleId，以便传递调用
+	window.roleIdArray = [];
+	
+	// 遍历数组,这里的roleArray是传来的roleArray，不是全局变量roleIdArray
+	for(var i=0; i<roleArray.length; i++){
+		var role = roleArray[i];
+		window.roleIdArray.push(role.roleId);
+		var roleName = role.roleName;
+		$("#roleNameSpan").append(roleName+"<br/>");
+	}
+}
+	
+/**
+ * 用ajax请求得到的数据生成auth树形结构页面
+ * @returns
+ */
+function fillAuthTree(){
+	// 1.发送ajax请求auth数据
+	var ajaxReturn = $.ajax({
+		"url": "assgin/get/all/auth.json",
+		"type": "post",
+		"dataType": "json",
+		"async": false
+	});
+	// 请求出错的情况
+	if(ajaxReturn.status != 200){
+		layer.msg("请求处理出错！" + ajaxReturn.status + " " + ajaxReturn.statusText);
+		return ;
+	}
+	// 2.从响应结果中获取auth的json数据,从服务器端查询到的list不需要组装成树形结构，这里我们交给zTree组装
+	var authList = ajaxReturn.responseJSON.data;
+	// 3.准备对zTree进行设置的JSON对象
+	var setting={
+		data: {
+			"simpleData": {
+				"enable": true,			//开启简单JSON功能
+				"pIdKey": "categoryId"	//使用categoryId成员变量代替pid指向父节点
+				},
+			"key": {"name": "title"},	//使用title成员变量的值当作name显示
+			"check": {"enable": true}
+			
+		}
+	};
+	// 4.生成树形结构
+	$.fn.zTree.init($("#authTreeDemo"), setting, authList);
+	// 调用zTreeObj对象展开节点
+	var zTreeObj = $.fn.zTree.getZTreeObj("authTreeDemo");
+	zTreeObj.expandAll(true);
+	
+	// 5.查询已分配的Auth的id租成的数组
+	
+	// 6.根据5.查出的authIdArray把树形结构中对应的节点勾选上
+}
