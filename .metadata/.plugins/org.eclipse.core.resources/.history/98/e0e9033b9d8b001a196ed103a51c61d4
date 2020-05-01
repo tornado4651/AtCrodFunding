@@ -1,0 +1,5 @@
+package org.springframework.web.filter;
+
+public class DelegatingFilterProxy {
+
+}
